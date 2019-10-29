@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Validage Configuration</title>
+    <!-- <link rel='stylesheet' href='/stylesheets/style.css' /> -->
+</head>
+
+<body>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+    <div class="container">
+
+
+
+        <div class="media">
+            <div class="media-body d-flex p-2">
+                <h1 class="mt-0 mb-1 display-4">
+                    <%= title %>
+                </h1>
+            </div>
+            <img class="ml-3" src="/images/main_icon.png" alt="Validage Logo" width="150px" height="150px">
+        </div>
+
+        <div class="d-flex flex-column-reverse">
+            <form id="validageForm" name="validageForm" method="post" action="/addKey"  >
+                <div class="form-group">
+                    <label for="inputPublicKey">Public Key</label>
+                    <input class="form-control" id="inputPublicKey" type="text" placeholder="Public Key"
+                        name="publicKey" value="<%= currentPublicKey %>" />
+                    <small id="publicKeyHelp" class="form-text text-muted">Please enter your public key. You can
+                        download it
+                        from <a href="http://www.validage.com"> here </a></small>
+                </div>
+                <div class="form-group">
+                    <label for="inputSecretKey">Secret Key</label>
+                    <textarea class="form-control" id="inputSecretKey" rows="4" cols="50" name="secretKey"
+                        form="validageForm" placeholder="Secret Key"><%= currentSecretKey %></textarea>
+                    <small id="publicKeyHelp" class="form-text text-muted">Please enter your secret key. You can
+                        download it
+                        from <a href="http://www.validage.com"> here </a></small>
+                </div>
+
+                <button class="btn btn-outline-primary btn-lg" id="btnSubmit" type="submit">Submit</button>
+            
+                
+            
+            </form>
+            
+        </div>
+        
+    </div>
+    <div class="container mt-4">
+            <div class="alert <%= alert %>" role="alert">
+                <%= message %>
+            </div>
+        </div>
+
+</body>
+
+</html>

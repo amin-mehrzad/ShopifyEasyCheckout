@@ -1,0 +1,230 @@
+const express = require('express');
+const router = express.Router();
+const dotenv = require('dotenv').config();
+const app = express();
+const crypto = require('crypto');
+const cookie = require('cookie');
+const nonce = require('nonce')();
+const querystring = require('querystring');
+const request = require('request-promise');
+const https = require('https');
+const apiKey = process.env.SHOPIFY_API_KEY;
+const apiSecret = process.env.SHOPIFY_API_SECRET;
+const scopes = ['read_themes', 'write_themes', 'read_script_tags', 'write_script_tags', 'read_checkouts', 'write_checkouts', 'read_orders', 'write_orders'];
+const forwardingAddress = process.env.HOST;
+
+
+// The Athorization Route
+router.get('/', (req, res) => {
+    const shop = req.query.shop;
+    if (shop) {
+        const state = nonce();
+        const redirectUri = forwardingAddress + '/shopify/callback';
+        const installUrl = 'https://' + shop +
+            '/admin/oauth/authorize?client_id=' + apiKey +
+            '&scope=' + scopes +
+            '&state=' + state +
+            '&redirect_uri=' + redirectUri;
+
+        res.cookie('state', state);
+        res.redirect(installUrl);
+    } else {
+        return res.status(400).send('Missing shop parameter. Please add ?shop=your-development-shop.myshopify.com to your request');
+    }
+});
+
+
+// The CallBack Route
+router.get('/callback', (req, res) => {
+
+
+    //DB Update promise
+    var db = req.db;
+    var websiteKey;
+    var accessToken;
+    var webhookID;
+    var myPromise = function (websiteKey, accessToken, webhookID) {
+        return new Promise(function (resolve, reject) {
+            //do something, fetch something....
+            //you guessed it, mongo queries go here.
+            db.collection('usercollection').update({ "websiteKey": websiteKey }, {
+                $set: {
+                    "publicKey": "",
+                    "secretKey": "",
+                    "websiteKey": websiteKey,
+                    "accessToken": accessToken,
+                    "webhookID": webhookID
+                }
+            }, { upsert: true })
+                .then(function (resDB) {
+                    resolve(resDB);
+                    console.log("xxx");
+                })
+            //I can continue to process my result inside my promise
+            if (false) { reject('aasdasdas'); }
+        });
+    }
+
+
+
+
+
+
+
+
+
+    const { shop, hmac, code, state } = req.query;
+    const stateCookie = cookie.parse(req.headers.cookie).state;
+
+    if (state !== stateCookie) {
+        return res.status(403).send('Request origin cannot be verified');
+    }
+
+    if (shop && hmac && code) {
+        // DONE: Validate request is from Shopify
+        const map = Object.assign({}, req.query);
+        delete map['signature'];
+        delete map['hmac'];
+        const message = querystring.stringify(map);
+        const providedHmac = Buffer.from(hmac, 'utf-8');
+        const generatedHash = Buffer.from(
+            crypto
+                .createHmac('sha256', apiSecret)
+                .update(message)
+                .digest('hex'),
+            'utf-8'
+        );
+        let hashEquals = false;
+        // timingSafeEqual will prevent any timing attacks. Arguments must be buffers
+        try {
+            hashEquals = crypto.timingSafeEqual(generatedHash, providedHmac)
+            // timingSafeEqual will return an error if the input buffers are not the same length.
+        } catch (e) {
+            hashEquals = false;
+        };
+        if (!hashEquals) {
+            return res.status(400).send('HMAC validation failed');
+        }
+
+        // DONE: Exchange temporary code for a permanent access token
+        const accessTokenRequestUrl = 'https://' + shop + '/admin/oauth/access_token';
+        const accessTokenPayload = {
+            client_id: apiKey,
+            client_secret: apiSecret,
+            code,
+        };
+
+        request.post(accessTokenRequestUrl, { json: accessTokenPayload })
+            .then((accessTokenResponse) => {
+                accessToken = accessTokenResponse.access_token;
+
+                // res.status(200).send("Got an access token, let's do something with it");
+
+                const shopRequestUrl = 'https://' + shop + '/admin/api/2019-10/shop.json';
+                const shopRequestHeaders = {
+                    'X-Shopify-Access-Token': accessToken,
+                };
+
+                request.get(shopRequestUrl, { headers: shopRequestHeaders })
+                    .then((shopResponse) => {
+                      //  res.status(200).send(shopResponse);
+                        //res.status(200).render('auth', { title: ['Valid', 'Age'] })
+                        
+                        var shopInformation = JSON.parse(shopResponse);
+                        websiteKey = shopInformation.shop.id;
+                        console.log(accessToken);
+
+                        const webhookRegisterData = JSON.stringify({
+                            webhook: {
+                                topic: "orders/create",
+                                address: `${forwardingAddress}/webhooks/orders/create`,
+                                // format: "json"
+                            }
+                        });
+
+                        const webhookOptions = {
+                            hostname: shop,
+                            path: `/admin/api/2019-10/webhooks.json`,
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Shopify-Access-Token': accessToken
+                            }
+                        }
+
+                        const reqWebhook = https.request(webhookOptions, resWebhook => {
+                            console.log(`statusCode: ${resWebhook.statusCode}`)
+                            resWebhook.setEncoding('utf8');
+                            var body = "";
+                            resWebhook.on('data', resData => {
+                              //  process.stdout.write(resData);
+                                console.log('--------------------->'+resData);
+                                //for(webhookID='undefined';webhookID=='undefined';){
+                                    body += resData;
+                                   // console.log(webhookID);
+                             //   const resWebhookData = (JSON.parse(resData));
+                                
+                              //  console.log(resWebhookData);
+
+
+                           // }
+                            });
+                            resWebhook.on('end', function()  {
+                                var resWebhookData = JSON.parse(body);
+                                console.log(resWebhookData);
+    
+                                if (resWebhook.statusCode == 200 || resWebhook.statusCode == 201) {
+                                    webhookID = resWebhookData.webhook.id
+                                    console.log(webhookID);
+    
+                                    myPromise(websiteKey, accessToken, webhookID).then(function (value) {
+                                      //  console.log(resData);
+                                        console.log(value);
+                                    });
+                                    res.render('auth', { title: ['Valid', 'Age'] })
+
+                                    // const state = nonce();
+                                    // resWebhook.cookie('state', state);
+                                    // resWebhook.redirect('https://shoptest4321.myshopify.com/admin/apps/easy-checkout-v2');
+    
+                                }else{
+                                  res.render('configuration', { title: "Validage Configuration", currentPublicKey: "collection[0].publicKey", currentSecretKey: "collection[0].secretKey", alert: "invisible", message: "" });
+
+                                }
+
+
+    
+                              //  console.error(error)
+                            });
+                        })
+
+                        reqWebhook.on('error', error => {
+                            console.error(error)
+                        })
+                        reqWebhook.write(webhookRegisterData)
+                        reqWebhook.end()  
+
+                    })
+                    .catch((error) => {
+                        res.status(error.statusCode).send(error);
+                    });
+                //const state = nonce();
+               //  res.cookie('state', state);
+                // res.redirect('https://shoptest4321.myshopify.com/admin/apps/89f80951d14fec398837b019c26bed2c');
+
+
+                // TODO
+                // Use access token to make API call to 'shop' endpoint
+            })
+            .catch((error) => {
+                res.status(error.statusCode).send(error.error.error_description);
+            });
+
+    } else {
+        res.status(400).send('Required parameters missing');
+    }
+});
+
+
+
+module.exports = router;
