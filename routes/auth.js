@@ -67,12 +67,6 @@ router.get('/callback', (req, res) => {
 
 
 
-
-
-
-
-
-
     const { shop, hmac, code, state } = req.query;
     const stateCookie = cookie.parse(req.headers.cookie).state;
 
@@ -127,9 +121,9 @@ router.get('/callback', (req, res) => {
 
                 request.get(shopRequestUrl, { headers: shopRequestHeaders })
                     .then((shopResponse) => {
-                      //  res.status(200).send(shopResponse);
+                        //  res.status(200).send(shopResponse);
                         //res.status(200).render('auth', { title: ['Valid', 'Age'] })
-                        
+
                         var shopInformation = JSON.parse(shopResponse);
                         websiteKey = shopInformation.shop.id;
                         console.log(accessToken);
@@ -157,60 +151,60 @@ router.get('/callback', (req, res) => {
                             resWebhook.setEncoding('utf8');
                             var body = "";
                             resWebhook.on('data', resData => {
-                              //  process.stdout.write(resData);
-                                console.log('--------------------->'+resData);
-                                //for(webhookID='undefined';webhookID=='undefined';){
-                                    body += resData;
-                                   // console.log(webhookID);
-                             //   const resWebhookData = (JSON.parse(resData));
-                                
-                              //  console.log(resWebhookData);
-
-
-                           // }
+                                console.log('--------------------->' + resData);
+                                body += resData;
                             });
-                            resWebhook.on('end', function()  {
+                            resWebhook.on('end', function () {
                                 var resWebhookData = JSON.parse(body);
                                 console.log(resWebhookData);
-    
                                 if (resWebhook.statusCode == 200 || resWebhook.statusCode == 201) {
                                     webhookID = resWebhookData.webhook.id
                                     console.log(webhookID);
-    
                                     myPromise(websiteKey, accessToken, webhookID).then(function (value) {
-                                      //  console.log(resData);
                                         console.log(value);
                                     });
                                     res.render('auth', { title: ['Valid', 'Age'] })
+                                } else {
 
-                                    // const state = nonce();
-                                    // resWebhook.cookie('state', state);
-                                    // resWebhook.redirect('https://shoptest4321.myshopify.com/admin/apps/easy-checkout-v2');
-    
-                                }else{
-                                  res.render('configuration', { title: "Validage Configuration", currentPublicKey: "collection[0].publicKey", currentSecretKey: "collection[0].secretKey", alert: "invisible", message: "" });
 
+                                    // Find website record
+
+
+                                    db.collection('usercollection').update({ "websiteKey": websiteKey }, {
+                                        $set: {
+                                            //"publicKey": "",
+                                            //"secretKey": "",
+                                            "websiteKey": websiteKey,
+                                            "accessToken": accessToken,
+                                            // "webhookID": webhookID
+                                        }
+                                    }, { upsert: true }).then(function (respDB) {
+                                        console.log(respDB);
+
+                                        // Get values frm DB
+                                        collection = db.collection('usercollection').find({ websiteKey: websiteKey }, async function (e, doc) {
+                                            console.log('00=++++++++++++++',doc[0]);
+                                            keys = doc[0];
+                                            accessToken = keys.accessToken;
+                                        }).then((collection) => {
+                                            console.log('1-=++++++++++++++', collection)
+                                            res.render('configuration', { title: "Validage Configuration", currentPublicKey: collection[0].publicKey , currentSecretKey: collection[0].secretKey, alert: "invisible", message: "" });
+                                        })
+                                    })
+                                    //  res.render('configuration', { title: "Validage Configuration", currentPublicKey: "collection[0].publicKey", currentSecretKey: "collection[0].secretKey", alert: "invisible", message: "" });
                                 }
-
-
-    
-                              //  console.error(error)
                             });
                         })
-
                         reqWebhook.on('error', error => {
                             console.error(error)
                         })
                         reqWebhook.write(webhookRegisterData)
-                        reqWebhook.end()  
+                        reqWebhook.end()
 
                     })
                     .catch((error) => {
                         res.status(error.statusCode).send(error);
                     });
-                //const state = nonce();
-               //  res.cookie('state', state);
-                // res.redirect('https://shoptest4321.myshopify.com/admin/apps/89f80951d14fec398837b019c26bed2c');
 
 
                 // TODO
@@ -224,7 +218,4 @@ router.get('/callback', (req, res) => {
         res.status(400).send('Required parameters missing');
     }
 });
-
-
-
 module.exports = router;

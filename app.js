@@ -24,7 +24,7 @@ var logger = require('morgan');
 // const forwardingAddress = process.env.HOST;
 
 var auth = require('./routes/auth');
-var load = require('./routes/load');
+//var load = require('./routes/load');
 
 
 // view engine setup
@@ -47,7 +47,7 @@ app.use(function (req, res, next) {
 
 
   app.use('/shopify', auth);
-  app.use('/', load);
+  //app.use('/', load);
   
 
 // catch 404 and forward to error handler
