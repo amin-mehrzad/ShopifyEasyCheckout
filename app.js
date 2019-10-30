@@ -24,6 +24,7 @@ var logger = require('morgan');
 // const forwardingAddress = process.env.HOST;
 
 var auth = require('./routes/auth');
+var indexRouter = require('./routes/index');
 //var load = require('./routes/load');
 
 
@@ -47,6 +48,8 @@ app.use(function (req, res, next) {
 
 
   app.use('/shopify', auth);
+  app.use('/', indexRouter);
+
   //app.use('/', load);
   
 

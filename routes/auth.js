@@ -14,6 +14,9 @@ const scopes = ['read_themes', 'write_themes', 'read_script_tags', 'write_script
 const forwardingAddress = process.env.HOST;
 
 
+var websiteKey;
+var accessToken;
+var webhookID;
 // The Athorization Route
 router.get('/', (req, res) => {
     const shop = req.query.shop;
@@ -37,12 +40,10 @@ router.get('/', (req, res) => {
 // The CallBack Route
 router.get('/callback', (req, res) => {
 
+    var db = req.db;
 
     //DB Update promise
-    var db = req.db;
-    var websiteKey;
-    var accessToken;
-    var webhookID;
+
     var myPromise = function (websiteKey, accessToken, webhookID) {
         return new Promise(function (resolve, reject) {
             //do something, fetch something....
@@ -188,7 +189,7 @@ router.get('/callback', (req, res) => {
                                             accessToken = keys.accessToken;
                                         }).then((collection) => {
                                             console.log('1-=++++++++++++++', collection)
-                                            res.render('configuration', { title: "Validage Configuration", currentPublicKey: collection[0].publicKey , currentSecretKey: collection[0].secretKey, alert: "invisible", message: "" });
+                                            res.render('configuration', { title: "Validage Configuration", currentPublicKey: collection[0].publicKey , currentSecretKey: collection[0].secretKey, alert: "invisible", message: "", currentWebsiteKey: collection[0].websiteKey });
                                         })
                                     })
                                     //  res.render('configuration', { title: "Validage Configuration", currentPublicKey: "collection[0].publicKey", currentSecretKey: "collection[0].secretKey", alert: "invisible", message: "" });
