@@ -131,8 +131,8 @@ router.get('/callback', (req, res) => {
 
                         const webhookRegisterData = JSON.stringify({
                             webhook: {
-                                topic: "orders/create",
-                                address: `${forwardingAddress}/webhooks/orders/create`,
+                                topic: "orders/updated",
+                                address: `${forwardingAddress}/webhooks/orders/updated`,
                                 // format: "json"
                             }
                         });
