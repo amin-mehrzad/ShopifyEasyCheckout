@@ -12,7 +12,7 @@ const apiKey = process.env.SHOPIFY_API_KEY;
 const apiSecret = process.env.SHOPIFY_API_SECRET;
 const scopes = ['read_themes', 'write_themes', 'read_script_tags', 'write_script_tags', 'read_checkouts', 'write_checkouts', 'read_orders', 'write_orders'];
 const forwardingAddress = process.env.HOST;
-
+var shopifyAPI = require('shopify-node-api');
 
 var websiteKey;
 var accessToken;

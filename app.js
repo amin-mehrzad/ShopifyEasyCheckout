@@ -69,7 +69,10 @@ var findStoreRecord = function (websiteKey) {
 //if(false)
 app.post('/webhooks/orders/updated', function (req, res) {
   console.log('----------------------------------------------------------------------');
-  console.log(req.body);
+  console.log(req.body.id)
+  
+  
+ // console.log(req.body);
   var orderID = req.body.id;
   var orderProducer = req.body.order_status_url;
   splitedOrderProducer = orderProducer.split("/");
@@ -88,14 +91,14 @@ app.post('/webhooks/orders/updated', function (req, res) {
     var orderNote = orderData.note;
     var orderTags = orderData.tags;
 
-
+console.log(orderTags);
     const shippingAddress = orderData.shipping_address;
-    console.log(orderData.billing_address)
+   // console.log(orderData.billing_address)
 
     const validageData = {
       order: {
         order_number: orderID,
-        order_status: "Processing",
+        order_status: "processing",
         order_date: date,
         order_total: totalPrice,
         order_data: orderData,
@@ -121,7 +124,15 @@ app.post('/webhooks/orders/updated', function (req, res) {
       console.log(`statusCode: ${resp.statusCode}`)
 
       resp.on('data', d => {
-        resObj = JSON.parse(d);
+        try{
+          var resObj = JSON.parse(d);
+          console.log('++++++++++')
+        }
+        catch (e) {
+          console.log(e);
+          console.log(e.message);
+          return
+        }
         var cyaCode = resObj.cya_code;
         if (cyaCode == 401 && orderNote != "Holded by ValidAge because information is not verified!") {
           const changeStatusData = {
@@ -167,14 +178,14 @@ app.post('/webhooks/orders/updated', function (req, res) {
 
 
     reqValidage.write(JSON.stringify(validageData))
+   // reqValidage.write(validageData)
+   // console.log(validageData);
     reqValidage.end()
 
   });
+ res.status('200').send("OK")
 
 });
-
-
-
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
