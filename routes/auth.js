@@ -164,35 +164,63 @@ router.get('/callback', (req, res) => {
                                     myPromise(websiteKey, accessToken, webhookID).then(function (value) {
                                         console.log(value);
                                     });
-                                    res.render('auth', { title: ['Valid', 'Age'] })
+
+
+                                    //Register Age verification Form Modal Script
+                                    const modalScript = JSON.stringify({
+                                        script_tag: {
+                                            event: 'onload',
+                                            src: `https://cloud.validage.com/cache/Shopify.js`
+                                        }
+                                    })
+                                    const scriptOptions = {
+                                        hostname: shop,
+                                        path: `/admin/api/2019-10/script_tags.json`,
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-Shopify-Access-Token': accessToken
+                                        }
+                                    }
+
+                                    const reqScript2 = https.request(scriptOptions, res => {
+                                        console.log(`statusCode: ${res.statusCode}`)
+                                        res.on('data', d => {
+                                            process.stdout.write(d)
+                                        })
+                                    })
+
+                                    reqScript2.on('error', error => {
+                                        console.error(error)
+                                    })
+                                    reqScript2.write(modalScript)
+                                    reqScript2.end()
+
+
+
+                                    res.render('auth', { title: ['Valid', 'Age'], shop: shop })
                                 } else {
 
 
                                     // Find website record
-
-
                                     db.collection('usercollection').update({ "websiteKey": websiteKey }, {
                                         $set: {
-                                            //"publicKey": "",
-                                            //"secretKey": "",
                                             "websiteKey": websiteKey,
-                                            "accessToken": accessToken,
-                                            // "webhookID": webhookID
+                                            "accessToken": accessToken
                                         }
                                     }, { upsert: true }).then(function (respDB) {
                                         console.log(respDB);
 
                                         // Get values frm DB
                                         collection = db.collection('usercollection').find({ websiteKey: websiteKey }, async function (e, doc) {
-                                            console.log('00=++++++++++++++',doc[0]);
+                                            console.log('00=++++++++++++++', doc[0]);
                                             keys = doc[0];
                                             accessToken = keys.accessToken;
                                         }).then((collection) => {
                                             console.log('1-=++++++++++++++', collection)
-                                            res.render('configuration', { title: "Validage Configuration", currentPublicKey: collection[0].publicKey , currentSecretKey: collection[0].secretKey, alert: "invisible", message: "", currentWebsiteKey: collection[0].websiteKey });
+                                            res.render('configuration', { title: "Validage Configuration", currentPublicKey: collection[0].publicKey, currentSecretKey: collection[0].secretKey, alert: "invisible", message: "", currentWebsiteKey: collection[0].websiteKey });
                                         })
                                     })
-                                    //  res.render('configuration', { title: "Validage Configuration", currentPublicKey: "collection[0].publicKey", currentSecretKey: "collection[0].secretKey", alert: "invisible", message: "" });
                                 }
                             });
                         })
@@ -201,6 +229,7 @@ router.get('/callback', (req, res) => {
                         })
                         reqWebhook.write(webhookRegisterData)
                         reqWebhook.end()
+
 
                     })
                     .catch((error) => {
