@@ -18,11 +18,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-// const apiKey = process.env.SHOPIFY_API_KEY;
-// const apiSecret = process.env.SHOPIFY_API_SECRET;
-// const scopes = ['read_themes', 'write_themes', 'read_script_tags', 'write_script_tags', 'read_checkouts', 'write_checkouts', 'read_orders', 'write_orders'];
-// const forwardingAddress = process.env.HOST;
-
 var auth = require('./routes/auth');
 var indexRouter = require('./routes/index');
 //var load = require('./routes/load');
@@ -70,9 +65,7 @@ var findStoreRecord = function (websiteKey) {
 app.post('/webhooks/orders/updated', function (req, res) {
   console.log('----------------------------------------------------------------------');
   console.log(req.body.id)
-  
-  
- // console.log(req.body);
+
   var orderID = req.body.id;
   var orderProducer = req.body.order_status_url;
   splitedOrderProducer = orderProducer.split("/");
@@ -91,9 +84,8 @@ app.post('/webhooks/orders/updated', function (req, res) {
     var orderNote = orderData.note;
     var orderTags = orderData.tags;
 
-console.log(orderTags);
+    console.log(orderTags);
     const shippingAddress = orderData.shipping_address;
-   // console.log(orderData.billing_address)
 
     const validageData = {
       order: {
@@ -124,7 +116,7 @@ console.log(orderTags);
       console.log(`statusCode: ${resp.statusCode}`)
 
       resp.on('data', d => {
-        try{
+        try {
           var resObj = JSON.parse(d);
           console.log('++++++++++')
         }
@@ -134,11 +126,44 @@ console.log(orderTags);
           return
         }
         var cyaCode = resObj.cya_code;
+
+        //Changing Status,Note and Tag;
+
+
         if (cyaCode == 401 && orderNote != "Holded by ValidAge because information is not verified!") {
           const changeStatusData = {
             order: {
               note: "Holded by ValidAge because information is not verified!",
               tags: "Holded"
+            }
+          }
+          const changeStatusOptions = {
+            hostname: shopOrigin,
+            path: `/admin/api/2019-10/orders/${orderID}.json`,
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken
+            }
+          }
+
+          const reqChangeStatus = https.request(changeStatusOptions, respChangeStatus => {
+            console.log(`statusCode: ${resp.statusCode}`)
+
+            respChangeStatus.on('data', d => {
+              process.stdout.write(d)
+            })
+          })
+          reqChangeStatus.on('error', error => {
+            console.error(error)
+          })
+          reqChangeStatus.write(JSON.stringify(changeStatusData))
+          reqChangeStatus.end()
+        } else if (cyaCode == 201 && orderNote != "Warning! Information is verified but ValidAge information and billing is not matched!") {
+          const changeStatusData = {
+            order: {
+              note: "Warning! Information is verified but ValidAge information and billing is not matched!",
+              tags: "Success"
             }
           }
 
@@ -164,26 +189,50 @@ console.log(orderTags);
           })
           reqChangeStatus.write(JSON.stringify(changeStatusData))
           reqChangeStatus.end()
+        }else if (cyaCode == 200 && orderNote != "Age verified by ValidAge successfully!!"){
+          const changeStatusData = {
+            order: {
+              note: "Age verified by ValidAge successfully!!",
+              tags: "Success"
+            }
+          }
 
+          const changeStatusOptions = {
+            hostname: shopOrigin,
+            path: `/admin/api/2019-10/orders/${orderID}.json`,
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken
+            }
+          }
+
+          const reqChangeStatus = https.request(changeStatusOptions, respChangeStatus => {
+            console.log(`statusCode: ${resp.statusCode}`)
+
+            respChangeStatus.on('data', d => {
+              process.stdout.write(d)
+            })
+          })
+          reqChangeStatus.on('error', error => {
+            console.error(error)
+          })
+          reqChangeStatus.write(JSON.stringify(changeStatusData))
+          reqChangeStatus.end()
         }
 
         process.stdout.write(d)
-
-
       })
     })
     reqValidage.on('error', error => {
       console.error(error)
     })
 
-
     reqValidage.write(JSON.stringify(validageData))
-   // reqValidage.write(validageData)
-   // console.log(validageData);
     reqValidage.end()
 
   });
- res.status('200').send("OK")
+  res.status('200').send("OK")
 
 });
 

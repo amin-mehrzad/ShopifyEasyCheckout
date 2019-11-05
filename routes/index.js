@@ -4,12 +4,9 @@ const https = require('https');
 
 /* POST to Add User Service */
 router.post('/addKey', function (req, res, next) {
+ console.log('1--------------------++++++++++++++++');
+ console.log(req.body.websiteKey);
 
-  console.log('1--------------------++++++++++++++++');
-  //console.log(websiteKey);
-  console.log('2--------------------++++++++++++++++');
-  console.log(req.body.websiteKey);
-console.log();
   // Set our internal DB variable
   var db = req.db;
 
@@ -35,8 +32,6 @@ console.log();
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
-      // 'X-Auth-Token': accessToken,
-      // 'X-Auth-Client': 'rnocx3o086g0zb0py2d9i9d8v6jxnha'
     }
   }
 
@@ -74,10 +69,8 @@ console.log();
               path: `/admin/api/2019-10/script_tags.json`,
               method: 'POST',
               headers: {
-                // 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
-               // 'X-Auth-Client': 'rnocx3o086g0zb0py2d9i9d8v6jxnha'
+                'X-Shopify-Access-Token': accessToken
               }
             }
 
@@ -127,7 +120,6 @@ console.log();
           secretKey = ""
         }
 
-
         alert = "alert-danger visible"
       }
       res.render('configuration', { title: "Validage Configuration", currentPublicKey: publicKey, currentSecretKey: secretKey, alert: alert, message: message,currentWebsiteKey: websiteKey });
@@ -143,7 +135,6 @@ console.log();
 
 
 })
-
 
 
 /* GET home page. */

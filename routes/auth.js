@@ -123,7 +123,6 @@ router.get('/callback', (req, res) => {
                 request.get(shopRequestUrl, { headers: shopRequestHeaders })
                     .then((shopResponse) => {
                         //  res.status(200).send(shopResponse);
-                        //res.status(200).render('auth', { title: ['Valid', 'Age'] })
 
                         var shopInformation = JSON.parse(shopResponse);
                         websiteKey = shopInformation.shop.id;
@@ -133,7 +132,7 @@ router.get('/callback', (req, res) => {
                             webhook: {
                                 topic: "orders/updated",
                                 address: `${forwardingAddress}/webhooks/orders/updated`,
-                                // format: "json"
+                                format: "json"
                             }
                         });
 
@@ -235,8 +234,7 @@ router.get('/callback', (req, res) => {
                     .catch((error) => {
                         res.status(error.statusCode).send(error);
                     });
-
-
+                    
                 // TODO
                 // Use access token to make API call to 'shop' endpoint
             })
