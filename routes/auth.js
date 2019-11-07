@@ -195,7 +195,111 @@ router.get('/callback', (req, res) => {
                                     reqScript2.write(modalScript)
                                     reqScript2.end()
 
+                                    //Modify cart page
 
+                                    // (1)Get theme IDs
+                                    const themesOptions = {
+                                        hostname: shop,
+                                        path: `/admin/api/2019-10/themes.json`,
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-Shopify-Access-Token': accessToken
+                                        }
+                                    }
+
+                                    const reqThemes = https.request(themesOptions, resThemes => {
+                                        console.log(`statusCode: ${resThemes.statusCode}`)
+                                        resThemes.setEncoding('utf8');
+                                        var body = "";
+                                        resThemes.on('data', respData => {
+                                            console.log('--------------------->' + respData);
+                                            body += respData;
+                                        });
+                                        resThemes.on('end', function () {
+                                            var resThemesData = JSON.parse(body);
+                                            console.log(resThemesData);
+                                            resThemesData.themes.forEach(function (theme) {
+                                                if (theme.role == 'main') {
+                                                    const themeID=theme.id;
+
+
+                                                    // (2)Get Cart Page source from Asset API
+                                                    const assetOptions = {
+                                                        hostname: shop,
+                                                        path: `/admin/api/2019-10/themes/${themeID}/assets.json?asset[key]=sections/cart-template.liquid&theme_id=${themeID}`,
+                                                        method: 'GET',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'X-Shopify-Access-Token': accessToken
+                                                        }
+                                                    }
+
+                                                    const reqAsset = https.request(assetOptions, resAsset => {
+                                                        console.log(`statusCode: ${resAsset.statusCode}`)
+                                                        resAsset.setEncoding('utf8');
+                                                        var body = "";
+                                                        resAsset.on('data', respoData => {
+                                                            body += respoData;
+                                                        });
+                                                        resAsset.on('end', function () {
+                                                            var resAssetData = JSON.parse(body);
+                                                            var cartSource=resAssetData.asset.value;
+                                                            
+                                                            cartSourceReplaced=cartSource.replace('name="checkout"','name="checkout" disabled');
+                                                            
+                                                            // (3)Update Cart Page source using Asset API
+                                                            const cartData = JSON.stringify({
+                                                                asset: {
+                                                                    key: 'sections/cart-template.liquid',
+                                                                    value: cartSourceReplaced
+                                                                }
+                                                            })
+                                                            const cartOptions = {
+                                                                hostname: shop,
+                                                                path: `/admin/api/2019-10/themes/${themeID}/assets.json`,
+                                                                method: 'PUT',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json',
+                                                                    'X-Shopify-Access-Token': accessToken
+                                                                }
+                                                            }
+        
+                                                            const reqCart = https.request(cartOptions, resCart => {
+                                                                console.log(`statusCode: ${resCart.statusCode}`)
+                                                                resCart.on('data', responData => {
+                                                                    process.stdout.write(responData)
+                                                                });
+                                                            })
+        
+                                                            reqCart.on('error', error => {
+                                                                console.error(error)
+                                                            })
+
+                                                            reqCart.write(cartData)
+                                                            reqCart.end()
+
+                                                        })
+                                                    })
+
+                                                    reqAsset.on('error', error => {
+                                                        console.error(error)
+                                                    })
+
+                                                    reqAsset.end()
+
+
+
+                                                }
+                                            });
+                                        })
+                                    })
+
+                                    reqThemes.on('error', error => {
+                                        console.error(error)
+                                    })
+
+                                    reqThemes.end()
 
                                     res.render('auth', { title: ['Valid', 'Age'], shop: shop })
                                 } else {
@@ -234,7 +338,7 @@ router.get('/callback', (req, res) => {
                     .catch((error) => {
                         res.status(error.statusCode).send(error);
                     });
-                    
+
                 // TODO
                 // Use access token to make API call to 'shop' endpoint
             })
