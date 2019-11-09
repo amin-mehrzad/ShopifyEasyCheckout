@@ -62,18 +62,28 @@
                     <input id="inputWebsiteKey" name="websiteKey" value="<%= currentWebsiteKey %>" type="hidden" />
                 </div>
                 <button class="btn btn-outline-primary btn-lg" id="btnSubmit" type="submit">Submit</button>
-
-
-
             </form>
-
         </div>
-
     </div>
     <div class="container mt-4">
         <div class="alert <%= alert %>" role="alert">
             <%= message %>
         </div>
+    </div>
+
+    <hr class="my-4">
+    <div class="container">
+        <form id="cleanTheme" name="cleanTheme" method="post" action="/cleanTheme">
+            <div class="form-group mb-2">
+                <h5 class="mt-0 mb-1">Uninstall Prepairing</h5>
+                <p>Please before uninstall ValidAge app, remove additional codes from your template files by click
+                    following button.</p>
+            </div>
+            <div class="form-group">
+                <input id="inputWebsiteKey" name="websiteKey" value="<%= currentWebsiteKey %>" type="hidden" />
+            </div>
+            <button type="submit" class="btn btn-outline-danger btn-md mb-2">Clean Template</button>
+        </form>
     </div>
 
 </body>
